@@ -68,6 +68,15 @@
     .form-group input[type="submit"]:hover {
         background-color: #0055a5;
     }
+
+    .youtube-hint {
+        text-align: center;
+        color: #555;
+    }
+
+    .youtube-hint a {
+        color: #0055a5;
+    }
 </style>
 <div class="form-container">
     <h1>Upload New Content</h1>
@@ -89,6 +98,10 @@
             <input type="submit" value="Upload Content">
         </div>
     </form>
+    <p class="youtube-hint">
+        Want to share a YouTube video instead?
+        <a href="${pageContext.request.contextPath}/youtube">Add it from YouTube</a>
+    </p>
 </div>
 <script>
     // Check the size before uploading: the server rejects files over 200 MB

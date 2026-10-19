@@ -66,9 +66,14 @@
     background-color: #0055a5;
 }
 </style>
+<c:set var="editing" value="${not empty schoolId}" />
+<c:set var="formAction" value="/schools/save" />
+<c:if test="${editing}">
+    <c:set var="formAction" value="/schools/update/${schoolId}" />
+</c:if>
 <div class="form-container">
-    <h1 class="form-title">Add New School</h1>
-    <form action="${pageContext.request.contextPath}/schools/save" method="post" class="styled-form">
+    <h1 class="form-title">${editing ? 'Edit School' : 'Add New School'}</h1>
+    <form action="${pageContext.request.contextPath}${formAction}" method="post" class="styled-form">
         <div class="form-group">
             <label for="name" class="form-label">School Name:</label>
             <input type="text" name="name" id="name" class="form-input" value="${fn:escapeXml(name)}" required>
@@ -85,7 +90,7 @@
             </select>
         </div>
         <div class="form-group">
-            <input type="submit" value="Save School" class="form-submit-btn">
+            <input type="submit" value="${editing ? 'Save Changes' : 'Save School'}" class="form-submit-btn">
         </div>
     </form>
 </div>

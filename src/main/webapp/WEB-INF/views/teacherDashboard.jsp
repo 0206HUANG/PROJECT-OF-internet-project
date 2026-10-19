@@ -34,6 +34,10 @@
        font-size: 1rem;
        color: #333;
    }
+   .my-classes ul li a {
+       color: #0055a5;
+       text-decoration: none;
+   }
    .content-management ul {
        list-style: none;
        padding: 0;
@@ -70,20 +74,28 @@
    <h1>Teacher Dashboard</h1>
    <div class="my-classes">
        <h2>My Classes</h2>
+       <a href="${pageContext.request.contextPath}/classes" class="btn">Manage Classes</a>
        <ul>
            <c:forEach var="classItem" items="${myClasses}">
-               <li><c:out value="${classItem}" /></li>
+               <li>
+                   <a href="${pageContext.request.contextPath}/classes/${classItem.id}"><c:out value="${classItem.name}" /></a>
+                   (${classItem.contentCount} item${classItem.contentCount == 1 ? '' : 's'})
+               </li>
            </c:forEach>
+           <c:if test="${empty myClasses}">
+               <li>You have no classes yet.</li>
+           </c:if>
        </ul>
    </div>
    <div class="content-management">
        <h2>Content Management</h2>
        <a href="${pageContext.request.contextPath}/content/upload" class="btn">Upload New Content</a>
+       <a href="${pageContext.request.contextPath}/youtube" class="btn">Add YouTube Video</a>
        <ul>
            <c:forEach var="content" items="${myContents}">
                <li>
-                   <a href="${pageContext.request.contextPath}/content/file/${content.id}" target="_blank"><c:out value="${content.title}" /></a>
-                   (<c:out value="${content.sizeLabel}" />, uploaded <fmt:formatDate value="${content.uploadedAt}" pattern="yyyy-MM-dd HH:mm" />)
+                   <a href="${pageContext.request.contextPath}/content/view/${content.id}"><c:out value="${content.title}" /></a>
+                   (${content.typeLabel}, added <fmt:formatDate value="${content.uploadedAt}" pattern="yyyy-MM-dd HH:mm" />)
                </li>
            </c:forEach>
            <c:if test="${empty myContents}">

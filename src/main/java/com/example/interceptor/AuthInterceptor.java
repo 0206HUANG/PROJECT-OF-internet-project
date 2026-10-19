@@ -24,11 +24,15 @@ public class AuthInterceptor implements HandlerInterceptor {
         this.adminOnly = adminOnly;
     }
 
+    // The logged-in user, or null
+    public static User currentUser(HttpSession session) {
+        return session == null ? null : (User) session.getAttribute(SESSION_USER);
+    }
+
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws IOException {
-        HttpSession session = request.getSession(false);
-        User user = session == null ? null : (User) session.getAttribute(SESSION_USER);
+        User user = currentUser(request.getSession(false));
         if (user == null) {
             response.sendRedirect(response.encodeRedirectURL(request.getContextPath() + "/login"));
             return false;

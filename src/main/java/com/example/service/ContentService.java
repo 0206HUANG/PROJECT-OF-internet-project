@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.model.Content;
 import com.example.model.User;
+import com.example.model.YouTubeVideo;
 
 @Service
 public class ContentService {
@@ -64,8 +66,14 @@ public class ContentService {
         try (InputStream in = file.getInputStream()) {
             Files.copy(in, uploadDir.resolve(storedFilename));
         }
-        Content content = new Content(nextId.getAndIncrement(), title, description, originalFilename(file),
-                storedFilename, contentType, file.getSize(), uploader.getUsername(), uploader.getFullName(),
+        Content content = Content.uploadedFile(nextId.getAndIncrement(), title, description, originalFilename(file),
+                storedFilename, contentType, file.getSize(), uploader, new Date());
+        contents.put(content.getId(), content);
+        return content;
+    }
+
+    public Content addYoutubeVideo(String title, String description, YouTubeVideo video, User uploader) {
+        Content content = Content.youtubeVideo(nextId.getAndIncrement(), title, description, video, uploader,
                 new Date());
         contents.put(content.getId(), content);
         return content;
@@ -73,6 +81,65 @@ public class ContentService {
 
     public Content findById(long id) {
         return contents.get(id);
+    }
+
+    // The library item for a YouTube video, or null if the video has not been added yet
+    public Content findByYoutubeVideoId(String videoId) {
+        for (Content content : contents.values()) {
+            if (videoId.equals(content.getYoutubeVideoId())) {
+                return content;
+            }
+        }
+        return null;
+    }
+
+    // Items in the given order; ids that no longer exist are skipped
+    public List<Content> findByIds(List<Long> ids) {
+        List<Content> result = new ArrayList<>();
+        for (Long id : ids) {
+            Content content = contents.get(id);
+            if (content != null) {
+                result.add(content);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Library search: query matches the title or description (case-insensitive),
+     * type is "upload", "youtube" or empty for everything.
+     */
+    public List<Content> search(String query, String type) {
+        String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        List<Content> result = new ArrayList<>();
+        for (Content content : findAll()) {
+            boolean typeMatches = "youtube".equals(type) ? content.isYoutube()
+                    : !"upload".equals(type) || !content.isYoutube();
+            boolean textMatches = needle.isEmpty()
+                    || content.getTitle().toLowerCase(Locale.ROOT).contains(needle)
+                    || content.getDescription().toLowerCase(Locale.ROOT).contains(needle);
+            if (typeMatches && textMatches) {
+                result.add(content);
+            }
+        }
+        return result;
+    }
+
+    public Content update(long id, String title, String description) {
+        return contents.computeIfPresent(id, (key, content) -> content.withDetails(title, description));
+    }
+
+    // Removes the item and, for uploads, its file on disk
+    public Content delete(long id) {
+        Content content = contents.remove(id);
+        if (content != null && !content.isYoutube()) {
+            try {
+                Files.deleteIfExists(getFile(content));
+            } catch (IOException e) {
+                // The library entry is gone; a leftover file only wastes disk space
+            }
+        }
+        return content;
     }
 
     // Newest uploads first
@@ -94,6 +161,16 @@ public class ContentService {
 
     public int count() {
         return contents.size();
+    }
+
+    public int countYoutube() {
+        int count = 0;
+        for (Content content : contents.values()) {
+            if (content.isYoutube()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     public Path getFile(Content content) {

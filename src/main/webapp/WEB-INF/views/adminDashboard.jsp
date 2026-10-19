@@ -39,6 +39,16 @@
        font-weight: bold;
        color: #333;
    }
+   .youtube-status {
+       text-align: center;
+       color: #555;
+   }
+   .youtube-status .ok {
+       color: #1e6b34;
+   }
+   .youtube-status .off {
+       color: #a12a1f;
+   }
    .recent-activities {
        margin-top: 30px;
    }
@@ -75,7 +85,18 @@
            <h3>Content Items</h3>
            <p>${totalContents}</p>
        </div>
+       <div class="card">
+           <h3>Classes</h3>
+           <p>${totalClasses}</p>
+       </div>
    </div>
+   <p class="youtube-status">
+       YouTube API:
+       <c:choose>
+           <c:when test="${youtubeEnabled}"><strong class="ok">connected</strong> (search and playlist import are available)</c:when>
+           <c:otherwise><strong class="off">not configured</strong> (videos can still be added by link; set <code>YOUTUBE_API_KEY</code> to enable search)</c:otherwise>
+       </c:choose>
+   </p>
    <div class="recent-activities">
        <h2>Recent Activities</h2>
        <ul>

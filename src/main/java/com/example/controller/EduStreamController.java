@@ -1,66 +1,63 @@
 package com.example.controller;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.example.interceptor.AuthInterceptor;
-import com.example.model.Content;
 import com.example.model.Role;
 import com.example.model.User;
 import com.example.service.ActivityService;
+import com.example.service.ClassService;
 import com.example.service.ContentService;
 import com.example.service.SchoolService;
 import com.example.service.UserService;
+import com.example.service.YouTubeService;
 
+// Login, registration, dashboards and reports
 @Controller
 public class EduStreamController {
 
     private final UserService userService;
     private final SchoolService schoolService;
     private final ContentService contentService;
+    private final ClassService classService;
     private final ActivityService activityService;
+    private final YouTubeService youTubeService;
 
     @Autowired
-    public EduStreamController(UserService userService, SchoolService schoolService,
-                               ContentService contentService, ActivityService activityService) {
+    public EduStreamController(UserService userService, SchoolService schoolService, ContentService contentService,
+                               ClassService classService, ActivityService activityService,
+                               YouTubeService youTubeService) {
         this.userService = userService;
         this.schoolService = schoolService;
         this.contentService = contentService;
+        this.classService = classService;
         this.activityService = activityService;
+        this.youTubeService = youTubeService;
     }
 
     // Home page: logged-in users go to their dashboard, everyone else to the login page
     @GetMapping("/")
     public String home(HttpSession session) {
-        User user = currentUser(session);
+        User user = AuthInterceptor.currentUser(session);
         return user == null ? "redirect:/login" : dashboardRedirect(user);
     }
 
     // Login page controller
     @GetMapping("/login")
     public String showLoginPage(HttpSession session) {
-        User user = currentUser(session);
+        User user = AuthInterceptor.currentUser(session);
         return user == null ? "login" : dashboardRedirect(user);
     }
 
@@ -132,16 +129,18 @@ public class EduStreamController {
         model.addAttribute("totalSchools", schoolService.count());
         model.addAttribute("totalUsers", userService.count());
         model.addAttribute("totalContents", contentService.count());
+        model.addAttribute("totalClasses", classService.count());
         model.addAttribute("activities", activityService.recent());
+        model.addAttribute("youtubeEnabled", youTubeService.isApiEnabled());
         return "adminDashboard";
     }
 
     // Teacher dashboard controller
     @GetMapping("/teacherDashboard")
     public String showTeacherDashboard(HttpSession session, Model model) {
-        // Classes are still sample data: the application has no class management yet
-        model.addAttribute("myClasses", new String[]{"Math Class", "English Class"});
-        model.addAttribute("myContents", contentService.findByUploader(currentUser(session).getUsername()));
+        User user = AuthInterceptor.currentUser(session);
+        model.addAttribute("myClasses", classService.findByTeacher(user.getUsername()));
+        model.addAttribute("myContents", contentService.findByUploader(user.getUsername()));
         return "teacherDashboard";
     }
 
@@ -157,123 +156,9 @@ public class EduStreamController {
         model.addAttribute("adminCount", userService.countByRole(Role.ADMIN));
         model.addAttribute("teacherCount", userService.countByRole(Role.TEACHER));
         model.addAttribute("totalContents", contentService.count());
+        model.addAttribute("youtubeContents", contentService.countYoutube());
+        model.addAttribute("totalClasses", classService.count());
         return "reports";
-    }
-
-    // School list page controller
-    @GetMapping("/schools")
-    public String showSchoolList(Model model) {
-        model.addAttribute("schools", schoolService.findAll());
-        return "schoolList";
-    }
-
-    // Add school page controller
-    @GetMapping("/schools/add")
-    public String showAddSchoolPage() {
-        return "addSchool";
-    }
-
-    @PostMapping("/schools/save")
-    public String saveSchool(@RequestParam("name") String name,
-                             @RequestParam("location") String location,
-                             @RequestParam("status") String status,
-                             HttpSession session,
-                             Model model,
-                             RedirectAttributes redirectAttributes) {
-        String error = null;
-        if (!StringUtils.hasText(name) || !StringUtils.hasText(location)) {
-            error = "School name and location are required.";
-        } else if (!"Active".equals(status) && !"Inactive".equals(status)) {
-            error = "Please choose a valid status.";
-        }
-
-        if (error != null) {
-            model.addAttribute("error", error);
-            model.addAttribute("name", name);
-            model.addAttribute("location", location);
-            model.addAttribute("status", status);
-            return "addSchool";
-        }
-
-        schoolService.add(name.trim(), location.trim(), status);
-        activityService.record(currentUser(session).getFullName() + " added school \"" + name.trim() + "\"");
-        redirectAttributes.addFlashAttribute("message", "School added successfully!");
-        return "redirect:/schools";
-    }
-
-    // Content upload page controller
-    @GetMapping("/content/upload")
-    public String showUploadContentPage() {
-        return "uploadContent";
-    }
-
-    @PostMapping("/content/save")
-    public String saveContent(@RequestParam("title") String title,
-                              @RequestParam("description") String description,
-                              @RequestParam(value = "file", required = false) MultipartFile file,
-                              HttpSession session,
-                              Model model,
-                              RedirectAttributes redirectAttributes) {
-        String contentType = file == null ? null : ContentService.allowedContentType(file.getContentType());
-        String error = null;
-        if (!StringUtils.hasText(title) || !StringUtils.hasText(description)) {
-            error = "Title and description are required.";
-        } else if (file == null || file.isEmpty()) {
-            error = "Please choose a file to upload.";
-        } else if (contentType == null) {
-            error = "Only image and video files can be uploaded.";
-        }
-
-        User user = currentUser(session);
-        if (error == null) {
-            try {
-                contentService.store(title.trim(), description.trim(), file, contentType, user);
-            } catch (IOException e) {
-                error = "The file could not be saved. Please try again.";
-            }
-        }
-        if (error != null) {
-            model.addAttribute("error", error);
-            model.addAttribute("title", title);
-            model.addAttribute("description", description);
-            return "uploadContent";
-        }
-
-        activityService.record(user.getFullName() + " uploaded \"" + title.trim() + "\"");
-        redirectAttributes.addFlashAttribute("message", "Content uploaded successfully!");
-        return "redirect:/contentLibrary";
-    }
-
-    // Content library page controller
-    @GetMapping("/contentLibrary")
-    public String showContentLibrary(Model model) {
-        model.addAttribute("contents", contentService.findAll());
-        return "contentLibrary";
-    }
-
-    // Streams an uploaded file so it can be viewed in the browser (supports seeking in videos)
-    @GetMapping("/content/file/{id}")
-    public ResponseEntity<Resource> showContentFile(@PathVariable("id") long id) {
-        Content content = contentService.findById(id);
-        if (content == null) {
-            return ResponseEntity.notFound().build();
-        }
-        Resource file = new FileSystemResource(contentService.getFile(content));
-        if (!file.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-        ContentDisposition disposition = ContentDisposition.builder("inline")
-                .filename(content.getOriginalFilename(), StandardCharsets.UTF_8)
-                .build();
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(content.getContentType()))
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
-                .header("X-Content-Type-Options", "nosniff")
-                .body(file);
-    }
-
-    private static User currentUser(HttpSession session) {
-        return (User) session.getAttribute(AuthInterceptor.SESSION_USER);
     }
 
     private static String dashboardRedirect(User user) {

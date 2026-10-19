@@ -74,6 +74,31 @@
            color: #a12a1f;
            border: 1px solid #f5c2bd;
        }
+       /* Small buttons shared by the list pages */
+       form.inline {
+           display: inline;
+           margin: 0;
+       }
+       .btn-small {
+           display: inline-block;
+           padding: 5px 12px;
+           font-size: 0.85rem;
+           color: white;
+           background-color: #003366;
+           border: none;
+           border-radius: 4px;
+           text-decoration: none;
+           cursor: pointer;
+       }
+       .btn-small:hover {
+           background-color: #0055a5;
+       }
+       .btn-danger {
+           background-color: #c62828;
+       }
+       .btn-danger:hover {
+           background-color: #e53935;
+       }
        .footer {
            text-align: center;
            padding: 20px 0;
@@ -99,13 +124,17 @@
                    <c:when test="${sessionScope.currentUser.admin}">
                        <li><a href="${pageContext.request.contextPath}/adminDashboard">Dashboard</a></li>
                        <li><a href="${pageContext.request.contextPath}/schools">Schools</a></li>
+                       <li><a href="${pageContext.request.contextPath}/classes">Classes</a></li>
                        <li><a href="${pageContext.request.contextPath}/contentLibrary">Content</a></li>
+                       <li><a href="${pageContext.request.contextPath}/youtube">YouTube</a></li>
                        <li><a href="${pageContext.request.contextPath}/reports">Reports</a></li>
                    </c:when>
                    <c:otherwise>
                        <li><a href="${pageContext.request.contextPath}/teacherDashboard">Dashboard</a></li>
+                       <li><a href="${pageContext.request.contextPath}/classes">My Classes</a></li>
                        <li><a href="${pageContext.request.contextPath}/contentLibrary">Content</a></li>
                        <li><a href="${pageContext.request.contextPath}/content/upload">Upload</a></li>
+                       <li><a href="${pageContext.request.contextPath}/youtube">YouTube</a></li>
                    </c:otherwise>
                </c:choose>
                <li><a href="${pageContext.request.contextPath}/logout">Logout</a></li>

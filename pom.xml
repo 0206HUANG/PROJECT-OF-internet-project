@@ -39,6 +39,13 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- JSON parsing for the YouTube Data API -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.13.5</version>
+    </dependency>
+
     <!-- JSTL Dependency -->
     <dependency>
       <groupId>javax.servlet</groupId>

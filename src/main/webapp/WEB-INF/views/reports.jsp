@@ -59,7 +59,14 @@
 
    <h2>Content</h2>
    <table>
-       <tr><td>Uploaded content items</td><td class="value">${totalContents}</td></tr>
+       <tr><td>Content items</td><td class="value">${totalContents}</td></tr>
+       <tr><td>Uploaded files</td><td class="value">${totalContents - youtubeContents}</td></tr>
+       <tr><td>YouTube videos</td><td class="value">${youtubeContents}</td></tr>
+   </table>
+
+   <h2>Classes</h2>
+   <table>
+       <tr><td>Classes</td><td class="value">${totalClasses}</td></tr>
    </table>
 </div>
 <%@ include file="footer.jsp" %>

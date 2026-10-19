@@ -67,6 +67,7 @@
                <th>School Name</th>
                <th>Location</th>
                <th>Status</th>
+               <th>Actions</th>
            </tr>
        </thead>
        <tbody>
@@ -75,11 +76,18 @@
                    <td><c:out value="${school.name}" /></td>
                    <td><c:out value="${school.location}" /></td>
                    <td><c:out value="${school.status}" /></td>
+                   <td>
+                       <a href="${pageContext.request.contextPath}/schools/edit/${school.id}" class="btn-small">Edit</a>
+                       <form action="${pageContext.request.contextPath}/schools/delete/${school.id}" method="post" class="inline"
+                             onsubmit="return confirm('Delete this school?');">
+                           <input type="submit" value="Delete" class="btn-small btn-danger">
+                       </form>
+                   </td>
                </tr>
            </c:forEach>
            <c:if test="${empty schools}">
                <tr>
-                   <td colspan="3">No schools yet.</td>
+                   <td colspan="4">No schools yet.</td>
                </tr>
            </c:if>
        </tbody>

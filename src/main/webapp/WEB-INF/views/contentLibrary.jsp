@@ -30,6 +30,36 @@
    .btn:hover {
        background-color: #0055a5;
    }
+   .btn-youtube {
+       background-color: #cc0000;
+       margin-left: 10px;
+   }
+   .btn-youtube:hover {
+       background-color: #e62117;
+   }
+   .filter-form {
+       display: flex;
+       flex-wrap: wrap;
+       gap: 10px;
+       margin-bottom: 10px;
+   }
+   .filter-form input[type="text"] {
+       flex: 1;
+       min-width: 200px;
+   }
+   .filter-form input[type="text"],
+   .filter-form select {
+       padding: 8px;
+       font-size: 1rem;
+       border: 1px solid #ccc;
+       border-radius: 5px;
+   }
+   .thumb {
+       display: block;
+       width: 120px;
+       margin-bottom: 6px;
+       border-radius: 4px;
+   }
    table {
        width: 100%;
        border-collapse: collapse;
@@ -66,37 +96,48 @@
 <div class="content-container">
    <h1>Content Library</h1>
    <a href="${pageContext.request.contextPath}/content/upload" class="btn">Upload New Content</a>
+   <a href="${pageContext.request.contextPath}/youtube" class="btn btn-youtube">Add YouTube Video</a>
+   <form action="${pageContext.request.contextPath}/contentLibrary" method="get" class="filter-form">
+       <input type="text" name="q" value="${fn:escapeXml(query)}" placeholder="Search by title or description">
+       <select name="type">
+           <option value="">All types</option>
+           <option value="upload" ${type == 'upload' ? 'selected' : ''}>Uploaded files</option>
+           <option value="youtube" ${type == 'youtube' ? 'selected' : ''}>YouTube videos</option>
+       </select>
+       <input type="submit" value="Search" class="btn-small">
+   </form>
    <table>
        <thead>
            <tr>
                <th>Title</th>
                <th>Description</th>
                <th>Type</th>
-               <th>Size</th>
+               <th>Size / Length</th>
                <th>Uploaded By</th>
                <th>Uploaded At</th>
-               <th>File</th>
+               <th></th>
            </tr>
        </thead>
        <tbody>
            <c:forEach var="item" items="${contents}">
                <tr>
-                   <td><c:out value="${item.title}" /></td>
+                   <td>
+                       <c:if test="${item.youtube}">
+                           <img src="${item.youtubeThumbnailUrl}" alt="" class="thumb">
+                       </c:if>
+                       <c:out value="${item.title}" />
+                   </td>
                    <td><c:out value="${item.description}" /></td>
-                   <td>${item.video ? 'Video' : 'Image'}</td>
-                   <td><c:out value="${item.sizeLabel}" /></td>
+                   <td>${item.typeLabel}</td>
+                   <td>${item.youtube and not empty item.youtubeVideo.durationLabel ? item.youtubeVideo.durationLabel : item.sizeLabel}</td>
                    <td><c:out value="${item.uploaderName}" /></td>
                    <td><fmt:formatDate value="${item.uploadedAt}" pattern="yyyy-MM-dd HH:mm" /></td>
-                   <td>
-                       <a href="${pageContext.request.contextPath}/content/file/${item.id}" target="_blank">
-                           <c:out value="${item.originalFilename}" />
-                       </a>
-                   </td>
+                   <td><a href="${pageContext.request.contextPath}/content/view/${item.id}">View</a></td>
                </tr>
            </c:forEach>
            <c:if test="${empty contents}">
                <tr>
-                   <td colspan="7">No content has been uploaded yet.</td>
+                   <td colspan="7">${empty query and empty type ? 'No content has been added yet.' : 'No content matches your search.'}</td>
                </tr>
            </c:if>
        </tbody>

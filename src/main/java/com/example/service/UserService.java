@@ -37,6 +37,10 @@ public class UserService {
         return true;
     }
 
+    public User findByUsername(String username) {
+        return users.get(normalize(username));
+    }
+
     public int count() {
         return users.size();
     }
